@@ -2,58 +2,148 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Confluence Trader - Rise / Fall</title>
-    <!-- TradingView Lightweight Charts Library -->
-    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+    <!-- Lightweight Charts Standalone Script -->
+    <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #131722; color: #d1d4dc; display: flex; height: 100vh; overflow: hidden; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #131722;
+            color: #d1d4dc;
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+        }
         
-        /* Left: Main Chart Area */
-        #chart-container { flex: 1; height: 100%; position: relative; border-right: 1px solid #2a2e39; }
-        #chart-header { position: absolute; top: 15px; left: 20px; z-index: 10; font-size: 18px; font-weight: bold; color: #fff; background: rgba(19, 23, 34, 0.8); padding: 5px 10px; border-radius: 4px; }
+        /* Left: Chart Container */
+        #chart-wrapper {
+            flex: 1;
+            height: 100%;
+            position: relative;
+            background: #131722;
+        }
+        #chart-container {
+            width: 100%;
+            height: 100%;
+        }
+        #chart-header {
+            position: absolute;
+            top: 15px;
+            left: 20px;
+            z-index: 10;
+            font-size: 16px;
+            font-weight: 600;
+            color: #ffffff;
+            background: rgba(30, 34, 45, 0.85);
+            padding: 6px 12px;
+            border-radius: 4px;
+            border: 1px solid #2a2e39;
+        }
         
         /* Right: Trading Panel */
-        #panel { width: 320px; padding: 20px; display: flex; flex-direction: column; gap: 15px; background: #1e222d; }
-        h3 { font-size: 16px; color: #fff; border-bottom: 1px solid #2a2e39; padding-bottom: 10px; }
+        #panel {
+            width: 320px;
+            height: 100%;
+            background: #1e222d;
+            border-left: 1px solid #2a2e39;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            overflow-y: auto;
+        }
+        h3 {
+            font-size: 16px;
+            color: #ffffff;
+            border-bottom: 1px solid #2a2e39;
+            padding-bottom: 12px;
+        }
         
-        label { font-size: 12px; color: #787b86; text-transform: uppercase; font-weight: bold; }
-        input, select { width: 100%; background: #131722; border: 1px solid #2a2e39; color: #fff; padding: 10px; border-radius: 4px; font-size: 14px; margin-top: 5px; }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        label {
+            font-size: 11px;
+            color: #787b86;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        input, select {
+            width: 100%;
+            background: #131722;
+            border: 1px solid #2a2e39;
+            color: #ffffff;
+            padding: 10px 12px;
+            border-radius: 4px;
+            font-size: 13px;
+            outline: none;
+        }
+        input:focus, select:focus {
+            border-color: #2962ff;
+        }
         
-        .btn-group { display: flex; gap: 10px; }
-        .btn { flex: 1; padding: 12px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; color: #fff; }
-        .btn-rise { background: #00c853; }
-        .btn-fall { background: #ff3b30; }
-        .btn-arm { background: #2962ff; width: 100%; padding: 14px; margin-top: 10px; }
+        .btn-arm {
+            background: #2962ff;
+            color: #ffffff;
+            border: none;
+            padding: 12px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 5px;
+        }
+        .btn-arm:hover {
+            background: #1e53e5;
+        }
         
-        #log { background: #131722; border: 1px solid #2a2e39; color: #00e676; font-family: monospace; font-size: 11px; padding: 10px; height: 150px; overflow-y: auto; border-radius: 4px; }
+        #log {
+            background: #131722;
+            border: 1px solid #2a2e39;
+            color: #00e676;
+            font-family: "Courier New", Courier, monospace;
+            font-size: 11px;
+            padding: 10px;
+            height: 140px;
+            overflow-y: auto;
+            border-radius: 4px;
+            line-height: 1.4;
+        }
     </style>
 </head>
 <body>
 
-    <!-- Left: Live TradingView Chart -->
-    <div id="chart-container">
+    <!-- Left: Main Chart -->
+    <div id="chart-wrapper">
         <div id="chart-header">Volatility 25 Index (15m)</div>
+        <div id="chart-container"></div>
     </div>
 
-    <!-- Right: Deriv Controls -->
+    <!-- Right: Panel -->
     <div id="panel">
         <h3>Rise / Fall Auto-Trader</h3>
 
-        <div>
+        <div class="form-group">
             <label>Deriv API Token</label>
             <input type="password" id="api_token" placeholder="Paste Read/Trade Token">
         </div>
 
-        <div>
+        <div class="form-group">
             <label>Wave Bias</label>
             <select id="wave_bias">
-                <option value="RISE">Bullish (Only Take RISE on Green Arrow)</option>
-                <option value="FALL">Bearish (Only Take FALL on Red Arrow)</option>
+                <option value="RISE">Bullish (Only RISE on Green Arrow)</option>
+                <option value="FALL">Bearish (Only FALL on Red Arrow)</option>
             </select>
         </div>
 
-        <div>
+        <div class="form-group">
             <label>Duration</label>
             <select id="duration">
                 <option value="5t">5 Ticks</option>
@@ -63,15 +153,17 @@
             </select>
         </div>
 
-        <div>
+        <div class="form-group">
             <label>Stake (USD)</label>
             <input type="number" id="stake" value="10" min="1">
         </div>
 
-        <button class="btn btn-arm" onclick="armBot()">⚡ ARM AUTO-SYSTEM</button>
+        <button class="btn-arm" onclick="armBot()">⚡ ARM AUTO-SYSTEM</button>
 
-        <label>System Telemetry</label>
-        <div id="log">Connecting to Deriv data stream...<br></div>
+        <div class="form-group" style="margin-top: auto;">
+            <label>System Telemetry</label>
+            <div id="log">Initializing chart engine...<br></div>
+        </div>
     </div>
 
     <script>
@@ -81,32 +173,51 @@
             logBox.scrollTop = logBox.scrollHeight;
         }
 
-        // 1. Initialize TradingView Chart
-        const chartContainer = document.getElementById('chart-container');
-        const chart = LightweightCharts.createChart(chartContainer, {
-            layout: { background: { color: '#131722' }, textColor: '#d1d4dc' },
-            grid: { vertLines: { color: '#2a2e39' }, horzLines: { color: '#2a2e39' } },
-            timeScale: { timeVisible: true, secondsVisible: false }
+        const container = document.getElementById('chart-container');
+        
+        // Initialize TradingView Chart
+        const chart = LightweightCharts.createChart(container, {
+            width: container.clientWidth,
+            height: container.clientHeight,
+            layout: {
+                background: { color: '#131722' },
+                textColor: '#d1d4dc',
+            },
+            grid: {
+                vertLines: { color: '#2a2e39' },
+                horzLines: { color: '#2a2e39' },
+            },
+            crosshair: {
+                mode: LightweightCharts.CrosshairMode.Normal,
+            },
+            timeScale: {
+                timeVisible: true,
+                secondsVisible: false,
+            },
         });
 
         const candleSeries = chart.addCandlestickSeries({
-            upColor: '#00c853', downColor: '#ff3b30',
+            upColor: '#089981',
+            downColor: '#f23645',
             borderVisible: false,
-            wickUpColor: '#00c853', wickDownColor: '#ff3b30'
+            wickUpColor: '#089981',
+            wickDownColor: '#f23645',
         });
 
-        // Resize chart dynamically
+        // Ensure chart auto-resizes to fit screen
         window.addEventListener('resize', () => {
-            chart.applyOptions({ width: chartContainer.clientWidth, height: chartContainer.clientHeight });
+            chart.applyOptions({
+                width: container.clientWidth,
+                height: container.clientHeight
+            });
         });
-        chart.applyOptions({ width: chartContainer.clientWidth, height: chartContainer.clientHeight });
 
-        // 2. Connect to Deriv Public WebSocket for Live Data
+        // Connect to Deriv Public WebSocket
         const ws = new WebSocket('wss://ws.binaryws.com/websockets/v3?app_id=1089');
 
         ws.onopen = () => {
-            log("Connected to Deriv Market Stream.");
-            // Request past 300 candles of Volatility 25 (15-min bars = 900 seconds)
+            log("Connected to Deriv Stream.");
+            // Request 300 candles of Volatility 25 (15-min bars = 900 granularity)
             ws.send(JSON.stringify({
                 ticks_history: "R_25",
                 adjust_start_time: 1,
@@ -119,35 +230,42 @@
         };
 
         ws.onmessage = (event) => {
-            const data = JSON.parse(event.data);
+            try {
+                const data = JSON.parse(event.data);
 
-            // Historical Bars Loaded
-            if (data.candles) {
-                const formatted = data.candles.map(c => ({
-                    time: c.epoch,
-                    open: c.open,
-                    high: c.high,
-                    low: c.low,
-                    close: c.close
-                }));
-                candleSeries.setData(formatted);
-                log("Loaded historical candles.");
-            }
+                // Handle historical candle loading
+                if (data.candles) {
+                    const formattedCandles = data.candles.map(c => ({
+                        time: Number(c.epoch),
+                        open: Number(c.open),
+                        high: Number(c.high),
+                        low: Number(c.low),
+                        close: Number(c.close)
+                    }));
+                    candleSeries.setData(formattedCandles);
+                    chart.timeScale().fitContent();
+                    log("Historical candles loaded.");
+                }
 
-            // Real-Time Tick Update
-            if (data.ohlc) {
-                const c = data.ohlc;
-                candleSeries.update({
-                    time: c.open_time,
-                    open: parseFloat(c.open),
-                    high: parseFloat(c.high),
-                    low: parseFloat(c.low),
-                    close: parseFloat(c.close)
-                });
+                // Handle live candle update
+                if (data.ohlc) {
+                    candleSeries.update({
+                        time: Number(data.ohlc.open_time),
+                        open: Number(data.ohlc.open),
+                        high: Number(data.ohlc.high),
+                        low: Number(data.ohlc.low),
+                        close: Number(data.ohlc.close)
+                    });
+                }
+            } catch (err) {
+                console.error("Error processing WebSocket data:", err);
             }
         };
 
-        // 3. ARM Bot Handler
+        ws.onerror = (err) => {
+            log("Deriv WebSocket connection error.");
+        };
+
         async function armBot() {
             const token = document.getElementById('api_token').value;
             const bias = document.getElementById('wave_bias').value;
@@ -156,15 +274,19 @@
 
             if(!token) return alert("Please enter your Deriv API token!");
 
-            log(`Arming system: Bias = ${bias}, Stake = $${stake}`);
+            log(`System armed: Bias=${bias}, Stake=$${stake}`);
             
-            const res = await fetch('/api/start', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ token, wave_count: bias, stake, duration })
-            });
-            const result = await res.json();
-            log(result.message);
+            try {
+                const res = await fetch('/api/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token, wave_count: bias, stake, duration })
+                });
+                const result = await res.json();
+                log(result.message);
+            } catch (e) {
+                log("Failed to communicate with Go backend.");
+            }
         }
     </script>
 </body>
