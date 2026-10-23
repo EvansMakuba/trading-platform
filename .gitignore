@@ -1,0 +1,7 @@
+# Ignore the Go compiled binary
+trading-platform
+trading-platform.exe
+
+# Ignore Mac/Windows system files
+.DS_Store
+Thumbs.db
