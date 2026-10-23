@@ -1,15 +1,57 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<meta charset="UTF-8">
-		<title>Trading Platform</title>
+<head>
+    <meta charset="UTF-8">
+    <title>Trading Confluence Platform</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 40px; max-width: 600px; margin: auto; }
+        .card { border: 1px solid #ccc; padding: 20px; border-radius: 8px; box-shadow: 2px 2px 12px #aaa; }
+        input, select, button { width: 100%; padding: 10px; margin: 10px 0; border-radius: 4px; }
+        button { background-color: #28a745; color: white; border: none; cursor: pointer; font-weight: bold; }
+        button:hover { background-color: #218838; }
+        #log { background: #222; color: #0f0; padding: 10px; font-family: monospace; height: 150px; overflow-y: scroll; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>Setup Auto-Trader</h2>
+        <input type="password" id="api_token" placeholder="Enter Deriv API Token (Read/Trade scopes)">
+        
+        <label>Current Wave Count Context:</label>
+        <select id="wave_count">
+            <option value="wave_2_bottom">Wave (2) Bottom (Looking for Buys)</option>
+            <option value="wave_4_bottom">Wave (4) Bottom (Looking for Buys)</option>
+            <option value="wave_3_top">Wave (3) Top (Looking for Sells)</option>
+        </select>
 
-	</head>
-	<body>
-		<div id="app">
-			<h1>Welcome to the Trading Confluence Platform</h1>
-			<p> Awaiting wave count...</p>
-		</div>
-	</body>
+        <button onclick="startBot()">Connect & Start Waiting</button>
+        
+        <h3>System Logs</h3>
+        <div id="log">System ready...<br></div>
+    </div>
 
+    <script>
+        function logMessage(msg) {
+            document.getElementById('log').innerHTML += msg + '<br>';
+        }
+
+        async function startBot() {
+            const token = document.getElementById('api_token').value;
+            const wave = document.getElementById('wave_count').value;
+            
+            if(!token) return alert("API Token required!");
+
+            logMessage("Connecting to backend...");
+            
+            const res = await fetch('/api/start', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token: token, wave_count: wave })
+            });
+            
+            const data = await res.json();
+            logMessage(data.message);
+        }
+    </script>
+</body>
 </html>
