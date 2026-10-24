@@ -212,15 +212,13 @@
             });
         });
 
-        // Connect to Deriv Public WebSocket
-        // const ws = new WebSocket('wss://ws.binaryws.com/websockets/v3?app_id=1089');
-        // NEW (Proxied through your server):
+        // Connect to Deriv via our Go Proxy
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const ws = new WebSocket(`${protocol}//${window.location.host}/ws/market`);
 
         ws.onopen = () => {
-            log("Connected to Deriv Stream.");
-            // Request 300 candles of Volatility 25 (15-min bars = 900 granularity)
+            log("Connected to Proxy. Requesting candles...");
+            // Ask Deriv for the candles
             ws.send(JSON.stringify({
                 ticks_history: "R_25",
                 adjust_start_time: 1,
@@ -236,18 +234,30 @@
             try {
                 const data = JSON.parse(event.data);
 
+                // CATCH AND SHOW ERRORS!
+                if (data.error) {
+                    log(`<span style="color: #ff3b30">API Error: ${data.error.message}</span>`);
+                    return;
+                }
+
                 // Handle historical candle loading
                 if (data.candles) {
-                    const formattedCandles = data.candles.map(c => ({
+                    // TradingView requires data strictly sorted by time
+                    const formattedCandles = data.candles.sort((a,b) => a.epoch - b.epoch).map(c => ({
                         time: Number(c.epoch),
                         open: Number(c.open),
                         high: Number(c.high),
                         low: Number(c.low),
                         close: Number(c.close)
                     }));
-                    candleSeries.setData(formattedCandles);
-                    chart.timeScale().fitContent();
-                    log("Historical candles loaded.");
+                    
+                    if (formattedCandles.length > 0) {
+                        candleSeries.setData(formattedCandles);
+                        chart.timeScale().fitContent();
+                        log("Historical candles loaded successfully.");
+                    } else {
+                        log("Warning: Deriv returned 0 candles.");
+                    }
                 }
 
                 // Handle live candle update
@@ -266,7 +276,7 @@
         };
 
         ws.onerror = (err) => {
-            log("Deriv WebSocket connection error.");
+            log(`<span style="color: #ff3b30">WebSocket connection dropped.</span>`);
         };
 
         async function armBot() {

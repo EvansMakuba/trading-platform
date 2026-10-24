@@ -37,7 +37,7 @@ func startBotHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// Market Data WebSocket Proxy: Bridges Browser <-> Deriv API
+// Market Data WebSocket Proxy (True Bi-Directional)
 func marketDataHandler(w http.ResponseWriter, r *http.Request) {
 	clientConn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -47,37 +47,37 @@ func marketDataHandler(w http.ResponseWriter, r *http.Request) {
 	defer clientConn.Close()
 
 	// Connect to Deriv from Vultr Server
-	derivConn, _, err := websocket.DefaultDialer.Dial("wss://ws.derivws.com/websockets/v3?app_id=1089", nil)
+	derivConn, _, err := websocket.DefaultDialer.Dial("wss://ws.binaryws.com/websockets/v3?app_id=1089", nil)
 	if err != nil {
 		log.Println("Failed to connect to Deriv from server:", err)
 		return
 	}
 	defer derivConn.Close()
 
-	// Request historical candles + live stream for R_25
-	subscribeMsg := map[string]interface{}{
-		"ticks_history":     "R_25",
-		"adjust_start_time": 1,
-		"count":             300,
-		"end":               "latest",
-		"style":             "candles",
-		"granularity":       900,
-		"subscribe":         1,
-	}
-	derivConn.WriteJSON(subscribeMsg)
+	// Channel 1: Read from Deriv, send to Browser
+	go func() {
+		for {
+			msgType, message, err := derivConn.ReadMessage()
+			if err != nil {
+				return
+			}
+			if err := clientConn.WriteMessage(msgType, message); err != nil {
+				return
+			}
+		}
+	}()
 
-	// Pipe all incoming Deriv messages straight to the browser
+	// Channel 2: Read from Browser, send to Deriv
 	for {
-		_, message, err := derivConn.ReadMessage()
+		msgType, message, err := clientConn.ReadMessage()
 		if err != nil {
 			break
 		}
-		if err := clientConn.WriteMessage(websocket.TextMessage, message); err != nil {
+		if err := derivConn.WriteMessage(msgType, message); err != nil {
 			break
 		}
 	}
 }
-
 func main() {
 	fs := http.FileServer(http.Dir("./frontend"))
 	http.Handle("/", fs)
